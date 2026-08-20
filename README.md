@@ -1,58 +1,291 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# REST API Wallet & Auth
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+A Laravel-based REST API for user authentication, wallet management, transactions, and background money transfer processing.
 
-## About Laravel
+## Overview
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+This project provides APIs for:
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+- User registration
+- Login using phone number + PIN
+- JWT-based authentication
+- Top-up balance
+- Payment deduction
+- Money transfer between users
+- Transaction history report
+- Profile update
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+The application is designed to be easy to understand, run, and extend for learning or production-like testing.
 
-## Learning Laravel
+## Tech Stack
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+- PHP 8.3
+- Laravel 13
+- MySQL / SQLite for local development
+- Firebase JWT
+- Laravel Queue system for async transfer processing
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## Project Structure
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+- `app/Http/Controllers/Api` - API controllers
+- `app/Models` - Eloquent models
+- `app/Jobs` - background jobs
+- `app/Support` - helper classes such as JWT generator
+- `database/migrations` - database schema
+- `routes/api.php` - API routes
+- `tests/Feature` - feature test coverage
 
-## Agentic Development
+## Features
 
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+### 1. Register
+Creates a new user with UUID-based user_id and unique phone number.
 
-```bash
-composer require laravel/boost --dev
+Request body:
 
-php artisan boost:install
+```json
+{
+  "first_name": "Alice",
+  "last_name": "Sample",
+  "address": "Bandung",
+  "email": "alice@example.com",
+  "phone_number": "081234567890",
+  "pin": "123456",
+  "password": "secret123"
+}
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+### 2. Login
+Uses phone number and PIN to authenticate.
 
-## Contributing
+Request body:
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+```json
+{
+  "phone_number": "081234567890",
+  "pin": "123456"
+}
+```
 
-## Code of Conduct
+Response contains a JWT token.
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+### 3. Top Up
+Adds balance to the authenticated user.
 
-## Security Vulnerabilities
+### 4. Payment
+Deducts balance for a purchase or payment.
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+### 5. Transfer
+Transfers money to another user. The request is queued and processed asynchronously.
+
+### 6. Report Transactions
+Returns the user's transaction history and transfer records.
+
+### 7. Update Profile
+Updates profile data excluding unique identifiers.
+
+## Authentication
+
+This API uses JWT tokens.
+
+Protected endpoints require a token in the Authorization header. The app accepts the following formats:
+
+```http
+Authorization: <jwt_token>
+```
+
+or
+
+```http
+Authorization: Bearer <jwt_token>
+```
+
+## API Endpoints
+
+### Public
+
+#### Register
+```http
+POST /api/register
+```
+
+#### Login
+```http
+POST /api/login
+```
+
+### Protected
+
+#### Top Up
+```http
+POST /api/top-ups
+```
+
+#### Payment
+```http
+POST /api/payments
+```
+
+#### Transfer
+```http
+POST /api/transfers
+```
+
+#### Transaction Report
+```http
+GET /api/transactions
+```
+
+#### Profile
+```http
+GET /api/profile
+```
+
+#### Update Profile
+```http
+PUT /api/profile
+```
+
+## Example Requests
+
+### Login
+```bash
+curl -X POST http://127.0.0.1:8000/api/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "phone_number": "081234567890",
+    "pin": "123456"
+  }'
+```
+
+### Top Up
+```bash
+curl -X POST http://127.0.0.1:8000/api/top-ups \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <jwt_token>" \
+  -d '{
+    "amount": 50000
+  }'
+```
+
+### Transfer
+```bash
+curl -X POST http://127.0.0.1:8000/api/transfers \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <jwt_token>" \
+  -d '{
+    "receiver_phone": "081234567891",
+    "amount": 10000,
+    "description": "Dinner"
+  }'
+```
+
+## Setup Instructions
+
+### 1. Clone the repository
+```bash
+git clone <repository-url>
+cd restapi
+```
+
+### 2. Install dependencies
+```bash
+composer install
+```
+
+### 3. Configure environment file
+Copy the example environment file:
+
+```bash
+cp .env.example .env
+```
+
+Then set the application key:
+
+```bash
+php artisan key:generate
+```
+
+Make sure the JWT secret is configured in `.env`:
+
+```env
+JWT_SECRET=restapi-jwt-secret-key-2026-very-long
+```
+
+### 4. Configure database
+Update `.env` to your database settings. For example, using SQLite local setup:
+
+```env
+DB_CONNECTION=sqlite
+DB_DATABASE=/absolute/path/to/your/project/database/database.sqlite
+```
+
+Or MySQL:
+
+```env
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=payment
+DB_USERNAME=root
+DB_PASSWORD=
+```
+
+### 5. Run migrations
+```bash
+php artisan migrate
+```
+
+### 6. Run the app
+```bash
+php artisan serve
+```
+
+The app will be available at:
+
+```text
+http://127.0.0.1:8000
+```
+
+## Queue / Background Transfer
+
+Transfer processing runs asynchronously using Laravel queues.
+
+Start the queue worker:
+
+```bash
+php artisan queue:work
+```
+
+This allows transfers to be queued immediately and processed in the background.
+
+## Testing
+
+Run the API test suite:
+
+```bash
+php artisan test
+```
+
+Or run only wallet/auth tests:
+
+```bash
+php artisan test tests/Feature/AuthAndWalletApiTest.php
+```
+
+## Notes
+
+- This project is intended for backend API learning and demonstration.
+- For production use, consider adding:
+  - validation and rate limiting
+  - stronger password and PIN rules
+  - transaction audit logging
+  - admin dashboard for queue monitoring
+  - HTTPS and environment-specific secrets
 
 ## License
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+This project is open for learning and personal use. You may adapt it for your own projects.
+
+## Contact
+
+Use your GitHub repository details or maintainer profile here if you want to share contact information.
